@@ -1,0 +1,5 @@
+flask>=2.3
+flask-cors>=4.0
+requests>=2.31
+groq>=0.9
+# opcional: evox jax  (si queres PSO real)

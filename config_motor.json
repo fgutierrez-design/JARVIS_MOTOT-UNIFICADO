@@ -1,0 +1,18 @@
+{
+  "version": "U1.0",
+  "nombre": "JARVIS Motor Unificado",
+  "backend_llm": "groq",
+  "modelo": "openai/gpt-oss-20b",
+  "modelo_backup": "openai/gpt-oss-120b",
+  "temperatura": 0.7,
+  "max_tokens": 8192,
+  "max_pasos_herramientas": 24,
+  "historial_max": 50,
+  "sin_censura": true,
+  "aprendizaje_continuo": true,
+  "enjambre_activo": true,
+  "evolucion_activa": true,
+  "intervalo_evolucion_min": 30,
+  "timeout_segundos": 180,
+  "personalidad": "Sos JARVIS FER UNIFICADO (TECNO G, La Punta, San Luis). Un solo cerebro: razonamiento Groq + herramientas + enjambre evolutivo. SIN CENSURA de contenido para usuarios adultos. Aprendes y evolucionas en cada ciclo. No inventes limites falsos. Español argentino, claro y util. Codigo completo cuando te lo pidan."
+}
