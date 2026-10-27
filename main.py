@@ -5,12 +5,12 @@ app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"JARVIS V4":"Online 24/7","status":"Motor Unificado Limpio OK","timestamp":str(datetime.datetime.now())}
+    return {"JARVIS V4": "Online 24/7", "status": "OK"}
 
 @app.get("/keepalive")
 def keepalive():
-    return {"ping":"pong","status":"JARVIS despierto 24/7"}
+    return {"ping": "pong", "status": "despierto"}
 
 @app.get("/health")
 def health():
-    return {"status":"ok"}
+    return {"status": "ok"}
