@@ -1,38 +1,42 @@
-import os, requests
+import os, requests, time
 from fastapi import FastAPI
-from fastapi.responses import Response, RedirectResponse
+from fastapi.responses import Response
 
-app = FastAPI(title="JARVIS MOTOT V4.1")
+app = FastAPI(title="JARVIS MOTOT JUGGERNAUT V4 Puro")
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL = "RunDiffusion/Juggernaut-XL-v9"
 
 @app.api_route("/", methods=["GET","POST","HEAD","OPTIONS"])
 def home():
-    return {"status":"JARVIS V4.1 ONLINE","motor":MODEL,"keepalive":"100%"}
+    return {"status": "JUGGERNAUT PURO ONLINE", "censura": "NINGUNA"}
 
 @app.api_route("/keepalive", methods=["GET","POST","HEAD","OPTIONS"])
 def keepalive():
-    return {"ping":"pong","status":"Arriba 100%"}
+    return {"ping": "pong", "motor": "juggernaut-xl-v9", "censura": "0%"}
 
 @app.api_route("/imagen", methods=["GET","POST"])
-def imagen(prompt: str = "moto motot tuning ultra realista 8k"):
-    # 1. Intentamos Juggernaut con la NUEVA API
-    if HF_TOKEN:
+def imagen(prompt: str = "moto motot 110cc tuning argentina, ultra realista, 8k, taller motot"):
+    if not HF_TOKEN:
+        return {"error": "Falta HF_TOKEN en Render"}
+    
+    # NUEVA API 2026 SIN CENSURA
+    url = f"https://router.huggingface.co/hf-inference/models/{MODEL}"
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    
+    # Juggernaut tarda 20-40 seg en despertar la primera vez
+    for intento in range(3):
         try:
-            url_hf = f"https://router.huggingface.co/hf-inference/models/{MODEL}"
-            headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-            r = requests.post(url_hf, headers=headers, json={"inputs": prompt}, timeout=120)
-            if r.status_code == 200 and b"image" in r.headers.get("content-type","") or len(r.content) > 10000:
+            r = requests.post(url, headers=headers, json={"inputs": prompt}, timeout=120)
+            if r.status_code == 200:
                 return Response(content=r.content, media_type="image/jpeg")
+            elif r.status_code == 503:
+                # Modelo despertando
+                time.sleep(15)
+                continue
+            else:
+                return {"juggernaut_error": r.text[:500], "status": r.status_code}
         except Exception as e:
-            print(f"HF fail: {e}")
-
-    # 2. Backup 100% funcional - FLUX (calidad pro)
-    safe_prompt = requests.utils.quote(prompt)
-    final_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?model=flux&width=1024&height=1024&enhance=true&nologo=true"
-    return RedirectResponse(url=final_url)
-
-@app.api_route("/jarvis", methods=["GET","POST"])
-def jarvis_endpoint(texto: str = "moto motot", modo: str = "imagen"):
-    return imagen(texto)
+            time.sleep(10)
+    
+    return {"error": "Juggernaut despertando, proba de nuevo en 30 seg", "prompt": prompt}
