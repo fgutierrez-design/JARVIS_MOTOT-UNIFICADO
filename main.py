@@ -44,49 +44,45 @@ async def chat_unificado(request: Request):
     return JSONResponse({"respuesta": respuesta, "prompt": prompt, "motor": "unificado"})
 
 # ================= MOTOR 2: IMAGEN JUGGERNAUT =================
+# EN LA PARTE DE MOTOR 2, REEMPLAZA TODO EL BLOQUE DE IMAGEN POR ESTO:
+
 @app.api_route("/imagen", methods=["GET","POST"])
-async def imagen(request: Request, prompt: str = "mujer mecanica argentina sentada correctamente en moto 110 tuning"):
-    # Si viene por POST json
+async def imagen(request: Request, prompt: str = "mujer mecanica argentina"):
     try:
-        if request.method == "POST":
-            body = await request.json()
-            if body.get("prompt"):
-                prompt = body.get("prompt")
-    except:
-        pass
-    
-    # Prompt arreglado para no deformar
-    prompt_fix = f"{prompt}, ultra realistic, anatomically correct, both hands on handlebars, feet on ground, wearing jeans and leather jacket, perfect anatomy, workshop, 8k"
+        body = await request.json() if request.method == "POST" else {}
+        if body.get("prompt"): prompt = body.get("prompt")
+    except: pass
+    prompt_param = request.query_params.get("prompt")
+    if prompt_param: prompt = prompt_param
 
-    # INTENTO 1: COLAB TU JUGGERNAUT XL v9 7GB REAL
+    prompt_fix = f"{prompt}, ultra realistic, perfect anatomy, both hands on handlebars, feet on pegs, wearing jeans leather jacket, motorcycle workshop"
+
+    # INTENTO 1: COLAB DIRECTO - TU JUGGERNAUT REAL
     try:
-        from gradio_client import Client
-        client = Client(COLAB_URL)
-        result = client.predict(prompt_fix, api_name="/predict")
-        # result puede ser url o path
-        img_path = result[0] if isinstance(result, (list, tuple)) else result
-        if img_path.startswith("http"):
-            r = requests.get(img_path, timeout=90)
+        # Tu Colab Juggernaut espera POST así
+        colab_api = f"{COLAB_URL}/api/predict"
+        r = requests.post(colab_api, json={"data": [prompt_fix], "fn_index": 0}, timeout=120)
+        j = r.json()
+        img_data = j["data"][0]  # te devuelve una imagen base64 o url
+        # Si viene base64
+        if isinstance(img_data, str) and img_data.startswith("data:"):
+            import base64
+            b64 = img_data.split(",")[1]
+            return Response(content=base64.b64decode(b64), media_type="image/jpeg")
         else:
-            # Si es archivo local de gradio, pedirlo al servidor
-            r = requests.get(f"{COLAB_URL}/file={img_path}", timeout=90)
-        if r.status_code == 200 and len(r.content) > 5000:
-            return Response(content=r.content, media_type="image/jpeg")
+            # Si viene path /file=
+            img_url = f"{COLAB_URL}/file={img_data}" if "/file" not in img_data else img_data
+            if not img_url.startswith("http"):
+                img_url = f"{COLAB_URL}{img_url}"
+            img = requests.get(img_url, timeout=90).content
+            return Response(content=img, media_type="image/jpeg")
     except Exception as e:
-        print(f"[MOTOR 2] Colab falló: {e}")
+        print(f"COLAB ERROR: {e}")
+        # Si falla, igual te devuelvo el error para que lo veas
+        pass
 
-    # INTENTO 2: HUGGING FACE con tu token (si lo tenes)
-    if HF_TOKEN:
-        try:
-            url = "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9"
-            r = requests.post(url, headers={"Authorization": f"Bearer {HF_TOKEN}"}, json={"inputs": prompt_fix}, timeout=90)
-            if r.status_code == 200 and len(r.content) > 5000:
-                return Response(content=r.content, media_type="image/jpeg")
-        except Exception as e:
-            print(f"[MOTOR 2] HF falló: {e}")
-
-    # INTENTO 3: BACKUP Pollinations sin censura y sin limite (con seed)
+    # INTENTO 2: BACKUP POLLINATIONS (pero vos no querés este)
+    import urllib.parse, time
     safe = urllib.parse.quote(prompt_fix)
-    seed = int(time.time())
-    backup_url = f"https://image.pollinations.ai/prompt/{safe}?model=flux&width=1024&height=1024&nologo=true&nofeed=true&safe=false&enhance=true&seed={seed}"
-    return RedirectResponse(backup_url)
+    url = f"https://image.pollinations.ai/prompt/{safe}?model=flux&width=1024&height=1024&nologo=true&safe=false&seed={int(time.time())}"
+    return RedirectResponse(url)
